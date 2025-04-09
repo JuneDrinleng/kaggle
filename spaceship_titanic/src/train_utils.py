@@ -42,6 +42,7 @@ def train_model( train_loader,device,lr, num_epochs=10):
     num_features = train_loader.dataset.feature_num
     model = RegressionModel(num_features)
     model.to(device)
+    model.train()
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     train_loss = []
@@ -50,7 +51,7 @@ def train_model( train_loader,device,lr, num_epochs=10):
             inputs = inputs.to(device)
             labels = labels.to(device).squeeze(1).long()
             optimizer.zero_grad()
-            outputs = model(inputs)
+            outputs = model(inputs).squeeze(1)
             loss  = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
@@ -61,7 +62,8 @@ def train_model( train_loader,device,lr, num_epochs=10):
                 save_model = model.state_dict()
                 now_save_path = f"model/model.pth"
                 torch.save(save_model, now_save_path)
-    model=torch.load(now_save_path)
+    state_dict=torch.load(now_save_path)
+    model.load_state_dict(state_dict)
     return train_loss,model
 def test_model(model,device, val_loader,output_path):
     """
@@ -79,7 +81,7 @@ def test_model(model,device, val_loader,output_path):
     with torch.no_grad():
         for inputs in val_loader:
             inputs = inputs.to(device)
-            outputs = model(inputs)
+            outputs = model(inputs).squeeze(1)
             predicted_labels = torch.argmax(outputs, dim=1)
             outputs_list.append(predicted_labels)
     outputs = torch.cat(outputs_list, dim=0)
@@ -108,9 +110,26 @@ class RegressionModel(nn.Module):
         super(RegressionModel, self).__init__()
         self.num_features = num_features
         self.net=nn.Sequential(
-            nn.Linear(num_features, 32),
+            nn.Linear(num_features, 128),
             nn.ReLU(),
-            nn.Linear(32, 2)
+            nn.Dropout(0.5),
+            nn.TransformerEncoderLayer(d_model=128, nhead=8),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(16, 8),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(8, 4),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(4, 2),
         )
     def forward(self,x):
         return self.net(x)

@@ -16,7 +16,7 @@ def main():
     plt.show()
     # val_model(model,device, val_loader )
     date=time.strftime("%Y-%m-%d_%H-%M", time.localtime())
-    output_path = f"predict/submission_dl_2_{date}.csv"
+    output_path = f"predict/submission_dl_{date}.csv"
     test_model(model,device, test_loader,output_path )
     pass
 if __name__=="__main__":

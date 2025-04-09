@@ -9,6 +9,10 @@ class TrainDataset(torch.utils.data.Dataset):
         self.train_labels = self.train_labels.to_numpy()
         self.train_labels = torch.tensor(self.train_labels, dtype=torch.float32)
         self.feature_num = self.train_data.shape[1]
+        means = self.train_data.mean()
+        stds = self.train_data.std()
+        stds[stds == 0] = 1 
+        self.train_data = (self.train_data - means) / stds
 
     def __len__(self):
         return len(self.train_data)
@@ -22,6 +26,11 @@ class TestDataset(torch.utils.data.Dataset):
         self.data = pd.read_csv(data_path)
         self.test_data = self.data.to_numpy()
         self.test_data = torch.tensor(self.test_data, dtype=torch.float32)
+        means = self.test_data.mean()
+        stds = self.test_data.std()
+        stds[stds == 0] = 1
+        self.test_data = (self.test_data - means) / stds
+        self.feature_num = self.test_data.shape[1]
     def __len__(self):
         return len(self.data)
 
